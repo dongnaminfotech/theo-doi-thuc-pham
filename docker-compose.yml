@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: newgreen-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: newgreen_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d newgreen_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: newgreen-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgrespassword@postgres:5432/newgreen_db?schema=public
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - AUTH_SECRET=production-secret-must-be-at-least-32-chars
+      - STORAGE_DRIVER=local
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

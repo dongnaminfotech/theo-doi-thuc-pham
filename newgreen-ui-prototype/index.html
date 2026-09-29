@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#184d3a">
+  <meta name="description" content="New Green — thực đơn học đường và truy xuất nguồn gốc từng bữa ăn.">
+  <title>New Green — Bữa ăn minh bạch</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Bỏ qua điều hướng</a>
+  <div class="demo-bar">BẢN THIẾT KẾ GIAO DIỆN <span>·</span> Dữ liệu bên dưới chỉ để minh hoạ</div>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#home" aria-label="New Green - Trang chủ">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M9 25c1-11 11-16 23-16-1 11-7 22-18 22-5 0-7-3-5-6Z" fill="currentColor"/><path d="M10 30c5-8 11-12 20-17" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+        <span class="brand-text">new<span>green</span><small>BỮA ĂN HỌC ĐƯỜNG</small></span>
+      </a>
+      <button class="mobile-menu" id="mobile-menu" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Mở menu">☰</button>
+      <nav class="primary-nav" id="primary-nav" aria-label="Điều hướng chính">
+        <a href="#home" data-nav="home">Trang chủ</a>
+        <a href="#danh-muc" data-nav="danh-muc">Danh mục món ăn</a>
+        <a href="#truong/truong-anh-duong/ngay/2026-09-29" data-nav="truong">Thực đơn theo trường</a>
+      </nav>
+      <a class="header-action" href="#truong/truong-anh-duong/ngay/2026-09-29">Xem thực đơn <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <footer class="footer">
+    <div class="shell footer-grid">
+      <div><a class="brand brand-footer" href="#home"><span class="brand-mark" aria-hidden="true">✦</span><span class="brand-text">new<span>green</span><small>BỮA ĂN HỌC ĐƯỜNG</small></span></a><p>Một nơi để gia đình theo dõi thực đơn và hành trình nguyên liệu của từng bữa ăn.</p></div>
+      <div><strong>Khám phá</strong><a href="#home">Trang chủ</a><a href="#danh-muc">Danh mục món ăn</a><a href="#truong/truong-anh-duong/ngay/2026-09-29">Thực đơn theo trường</a></div>
+      <div><strong>Thông tin</strong><p>Bản giao diện minh hoạ cho dự án New Green. Dữ liệu, tên trường, lô hàng và chứng từ trên trang này đều là mẫu.</p></div>
+    </div>
+    <div class="shell footer-bottom"><span>© 2026 New Green</span><span>Thiết kế cho trải nghiệm rõ ràng, dễ tra cứu.</span></div>
+  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

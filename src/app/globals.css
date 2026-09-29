@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #173b30;
+  --muted: #667a70;
+  --green: #175b40;
+  --deep: #103e30;
+  --lime: #d9efb4;
+  --lime-2: #f0f8df;
+  --paper: #f7f8f3;
+  --line: #e3e9df;
+  --white: #ffffff;
+  --orange: #f8a566;
+  --shadow: 0 18px 50px rgba(18, 61, 42, 0.09);
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  width: min(1220px, calc(100% - 48px));
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-primary {
+  background-color: var(--green);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover {
+  background-color: var(--deep);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-secondary:hover {
+  background-color: var(--lime-2);
+  border-color: #c2d6b8;
+}
+
+.badge-verified {
+  color: #276749;
+  background-color: #def7ec;
+  border: 1px solid #bcf0da;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-pending {
+  color: #975a16;
+  background-color: #fefcbf;
+  border: 1px solid #faf089;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-revoked {
+  color: #9b2c2c;
+  background-color: #fed7d7;
+  border: 1px solid #feb2b2;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}

@@ -1,0 +1,458 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  SCHOOL_ADMIN
+  KITCHEN
+  WAREHOUSE
+  AUDITOR
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum SchoolStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DocStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TxType {
+  IN
+  OUT
+  RETURN
+  ADJUST_IN
+  ADJUST_OUT
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  AFTERNOON_SNACK
+  DINNER
+}
+
+enum MealStatus {
+  DRAFT
+  READY
+  ISSUED
+  COMPLETED
+  PUBLISHED
+}
+
+model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  name                  String
+  avatarUrl             String?                @map("avatar_url")
+  role                  Role                   @default(KITCHEN)
+  status                UserStatus             @default(ACTIVE)
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  userSchools           UserSchool[]
+  createdMeals          MealPlan[]             @relation("MealCreatedBy")
+  updatedMeals          MealPlan[]             @relation("MealUpdatedBy")
+  receipts              Receipt[]              @relation("ReceiptCreatedBy")
+  inventoryTransactions InventoryTransaction[] @relation("TxActor")
+  publishedSnapshots    TraceSnapshot[]        @relation("SnapshotPublisher")
+  auditLogs             AuditLog[]             @relation("AuditActor")
+
+  @@map("users")
+}
+
+model UserSchool {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  schoolId  String   @map("school_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, schoolId])
+  @@map("user_schools")
+}
+
+model School {
+  id            String       @id @default(uuid())
+  code          String       @unique
+  name          String
+  slug          String       @unique
+  address       String?
+  phone         String?
+  contactPerson String?      @map("contact_person")
+  status        SchoolStatus @default(ACTIVE)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  userSchools           UserSchool[]
+  slugHistory           SchoolSlugHistory[]
+  receipts              Receipt[]
+  lots                  Lot[]
+  inventoryTransactions InventoryTransaction[]
+  mealPlans             MealPlan[]
+  weeklyTemplates       WeeklyMenuTemplate[]
+  auditLogs             AuditLog[]
+
+  @@map("schools")
+}
+
+model SchoolSlugHistory {
+  id        String   @id @default(uuid())
+  schoolId  String   @map("school_id")
+  oldSlug   String   @unique @map("old_slug")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@map("school_slug_history")
+}
+
+model DishCategory {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  dishes Dish[]
+
+  @@map("dish_categories")
+}
+
+model Dish {
+  id          String   @id @default(uuid())
+  categoryId  String   @map("category_id")
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category        DishCategory         @relation(fields: [categoryId], references: [id])
+  recipes         Recipe[]
+  mealDishes      MealDish[]
+  weeklyTemplates WeeklyMenuTemplate[]
+
+  @@map("dishes")
+}
+
+model Ingredient {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  baseUnit  String   @map("base_unit")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  recipes               Recipe[]
+  receiptItems          ReceiptItem[]
+  lots                  Lot[]
+  inventoryTransactions InventoryTransaction[]
+  mealAllocations       MealAllocation[]
+
+  @@map("ingredients")
+}
+
+model Recipe {
+  id               String   @id @default(uuid())
+  dishId           String   @map("dish_id")
+  ingredientId     String   @map("ingredient_id")
+  qtyPerServing    Decimal  @map("qty_per_serving") @db.Decimal(18, 6)
+  wastePercent     Decimal  @default(0) @map("waste_percent") @db.Decimal(5, 2)
+  unit             String
+  conversionFactor Decimal  @default(1) @map("conversion_factor") @db.Decimal(18, 6)
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  dish       Dish       @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([dishId, ingredientId])
+  @@map("recipes")
+}
+
+model Supplier {
+  id            String         @id @default(uuid())
+  code          String         @unique
+  name          String
+  taxCode       String?        @map("tax_code")
+  address       String?
+  phone         String?
+  contactPerson String?        @map("contact_person")
+  status        SupplierStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  documents SupplierDocument[]
+  receipts  Receipt[]
+  lots      Lot[]
+
+  @@map("suppliers")
+}
+
+model SupplierDocument {
+  id                 String    @id @default(uuid())
+  supplierId         String    @map("supplier_id")
+  docType            String    @map("doc_type")
+  docNumber          String    @map("doc_number")
+  issueDate          DateTime  @map("issue_date")
+  expiryDate         DateTime  @map("expiry_date")
+  storageKey         String    @map("storage_key")
+  fileName           String    @map("file_name")
+  fileSize           Int       @map("file_size")
+  mimeType           String    @map("mime_type")
+  verificationStatus DocStatus @default(PENDING) @map("verification_status")
+  isPublic           Boolean   @default(false) @map("is_public")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("supplier_documents")
+}
+
+
+model Receipt {
+  id            String   @id @default(uuid())
+  schoolId      String   @map("school_id")
+  supplierId    String   @map("supplier_id")
+  receiptNumber String   @map("receipt_number")
+  receiptDate   DateTime @map("receipt_date")
+  notes         String?
+  createdById   String?  @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  school    School        @relation(fields: [schoolId], references: [id])
+  supplier  Supplier      @relation(fields: [supplierId], references: [id])
+  createdBy User?         @relation("ReceiptCreatedBy", fields: [createdById], references: [id])
+  items     ReceiptItem[]
+
+  @@unique([schoolId, receiptNumber])
+  @@map("receipts")
+}
+
+model ReceiptItem {
+  id           String   @id @default(uuid())
+  receiptId    String   @map("receipt_id")
+  ingredientId String   @map("ingredient_id")
+  unit         String
+  quantity     Decimal  @db.Decimal(18, 6)
+  unitPrice    Decimal  @default(0) @map("unit_price") @db.Decimal(18, 2)
+  totalAmount  Decimal  @default(0) @map("total_amount") @db.Decimal(18, 2)
+  baseQuantity Decimal  @map("base_quantity") @db.Decimal(18, 6)
+
+  receipt    Receipt    @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  lots       Lot[]
+
+  @@map("receipt_items")
+}
+
+model Lot {
+  id              String   @id @default(uuid())
+  receiptItemId   String?  @map("receipt_item_id")
+  schoolId        String   @map("school_id")
+  ingredientId    String   @map("ingredient_id")
+  supplierId      String   @map("supplier_id")
+  lotCode         String   @map("lot_code")
+  mfgDate         DateTime @map("mfg_date")
+  expiryDate      DateTime @map("expiry_date")
+  initialQuantity Decimal  @map("initial_quantity") @db.Decimal(18, 6)
+  currentStock    Decimal  @map("current_stock") @db.Decimal(18, 6)
+  baseUnit        String   @map("base_unit")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  receiptItem           ReceiptItem?           @relation(fields: [receiptItemId], references: [id])
+  school                School                 @relation(fields: [schoolId], references: [id])
+  ingredient            Ingredient             @relation(fields: [ingredientId], references: [id])
+  supplier              Supplier               @relation(fields: [supplierId], references: [id])
+  inventoryTransactions InventoryTransaction[]
+  mealAllocations       MealAllocation[]
+
+  @@index([schoolId, ingredientId, expiryDate])
+  @@index([lotCode])
+  @@map("lots")
+}
+
+model InventoryTransaction {
+  id             String   @id @default(uuid())
+  schoolId       String   @map("school_id")
+  lotId          String   @map("lot_id")
+  ingredientId   String   @map("ingredient_id")
+  txType         TxType   @map("tx_type")
+  quantity       Decimal  @db.Decimal(18, 6)
+  referenceType  String   @map("reference_type")
+  referenceId    String?  @map("reference_id")
+  idempotencyKey String?  @unique @map("idempotency_key")
+  notes          String?
+  actorId        String?  @map("actor_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  school     School     @relation(fields: [schoolId], references: [id])
+  lot        Lot        @relation(fields: [lotId], references: [id])
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  actor      User?      @relation("TxActor", fields: [actorId], references: [id])
+
+  @@map("inventory_transactions")
+}
+
+model MealPlan {
+  id              String     @id @default(uuid())
+  schoolId        String     @map("school_id")
+  mealDate        String     @map("meal_date")
+  mealType        MealType   @map("meal_type")
+  slotCode        String     @default("DEFAULT") @map("slot_code")
+  servingsCount   Int        @map("servings_count")
+  status          MealStatus @default(DRAFT)
+  notes           String?
+  photoUrl        String?    @map("photo_url")
+  photoStorageKey String?    @map("photo_storage_key")
+  version         Int        @default(1)
+  publishedAt     DateTime?  @map("published_at")
+  createdById     String?    @map("created_by_id")
+  updatedById     String?    @map("updated_by_id")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  school          School           @relation(fields: [schoolId], references: [id])
+  createdBy       User?            @relation("MealCreatedBy", fields: [createdById], references: [id])
+  updatedBy       User?            @relation("MealUpdatedBy", fields: [updatedById], references: [id])
+  mealDishes      MealDish[]
+  mealAllocations MealAllocation[]
+  traceSnapshots  TraceSnapshot[]
+
+  @@unique([schoolId, mealDate, mealType, slotCode])
+  @@index([schoolId, mealDate])
+  @@map("meal_plans")
+}
+
+
+model MealDish {
+  id         String   @id @default(uuid())
+  mealPlanId String   @map("meal_plan_id")
+  dishId     String   @map("dish_id")
+  sortOrder  Int      @default(0) @map("sort_order")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  mealPlan    MealPlan         @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  dish        Dish             @relation(fields: [dishId], references: [id])
+  allocations MealAllocation[]
+
+  @@map("meal_dishes")
+}
+
+model MealAllocation {
+  id           String   @id @default(uuid())
+  mealPlanId   String   @map("meal_plan_id")
+  mealDishId   String?  @map("meal_dish_id")
+  ingredientId String   @map("ingredient_id")
+  lotId        String   @map("lot_id")
+  allocatedQty Decimal  @map("allocated_qty") @db.Decimal(18, 6)
+  baseUnit     String   @map("base_unit")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  mealPlan   MealPlan   @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  mealDish   MealDish?  @relation(fields: [mealDishId], references: [id])
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+  lot        Lot        @relation(fields: [lotId], references: [id])
+
+  @@map("meal_allocations")
+}
+
+model WeeklyMenuTemplate {
+  id        String   @id @default(uuid())
+  schoolId  String?  @map("school_id")
+  dayOfWeek Int      @map("day_of_week")
+  mealType  MealType @map("meal_type")
+  dishId    String   @map("dish_id")
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  dish   Dish    @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@map("weekly_menu_templates")
+}
+
+model TraceSnapshot {
+  id            String   @id @default(uuid())
+  mealPlanId    String   @map("meal_plan_id")
+  publicToken   String   @unique @map("public_token")
+  version       Int      @default(1)
+  snapshotData  String   @map("snapshot_data") @db.Text
+  isRevoked     Boolean  @default(false) @map("is_revoked")
+  revokedReason String?  @map("revoked_reason")
+  publishedAt   DateTime @default(now()) @map("published_at")
+  publishedById String?  @map("published_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  mealPlan    MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  publishedBy User?    @relation("SnapshotPublisher", fields: [publishedById], references: [id])
+
+  @@map("trace_snapshots")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  schoolId    String?  @map("school_id")
+  actorId     String?  @map("actor_id")
+  actorEmail  String   @map("actor_email")
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id")
+  beforeData  String?  @map("before_data") @db.Text
+  afterData   String?  @map("after_data") @db.Text
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  actor  User?   @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([schoolId, createdAt])
+  @@index([actorEmail])
+  @@map("audit_logs")
+}
+
+model MigrationMap {
+  id          String   @id @default(uuid())
+  sourceTable String   @map("source_table")
+  sourceId    String   @map("source_id")
+  targetTable String   @map("target_table")
+  targetId    String   @map("target_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([sourceTable, sourceId])
+  @@map("migration_maps")
+}
+
