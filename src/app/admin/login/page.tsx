@@ -6,7 +6,9 @@ import Link from 'next/link';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('admin@banmai.vn');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +20,7 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail }),
+        body: JSON.stringify({ email: loginEmail, password }),
       });
 
       const data = await res.json();
@@ -26,7 +28,8 @@ export default function AdminLoginPage() {
         throw new Error(data.error?.message || 'Đăng nhập thất bại');
       }
 
-      router.push('/admin');
+      const nextPath = new URLSearchParams(window.location.search).get('next');
+      router.replace(nextPath?.startsWith('/admin') ? nextPath : '/admin');
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Lỗi kết nối máy chủ');
@@ -75,6 +78,29 @@ export default function AdminLoginPage() {
             />
           </div>
 
+          <div>
+            <label className="block text-xs font-bold text-[#173b30] mb-1">Mật khẩu</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="w-full px-3.5 py-2.5 pr-20 bg-[#f7f8f3] border border-[#d1dec9] rounded-xl text-sm text-[#173b30] focus:outline-none focus:ring-2 focus:ring-[#175b40]"
+                placeholder="Nhập mật khẩu"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((visible) => !visible)}
+                className="absolute inset-y-0 right-3 text-xs font-bold text-[#175b40]"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              >
+                {showPassword ? 'Ẩn' : 'Hiện'}
+              </button>
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -83,59 +109,6 @@ export default function AdminLoginPage() {
             {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống →'}
           </button>
         </form>
-
-        {/* Quick Role Fill Presets for Testing */}
-        <div className="mt-8 pt-6 border-t border-[#e3e9df]">
-          <span className="block text-[11px] font-bold text-[#667a70] uppercase tracking-wider mb-2 text-center">
-            Chọn nhanh vai trò thử nghiệm:
-          </span>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('admin@newgreen.vn');
-                handleLogin('admin@newgreen.vn');
-              }}
-              className="p-2 bg-[#f7f8f3] hover:bg-[#eaf5df] border border-[#e3e9df] rounded-xl font-bold text-left transition"
-            >
-              👑 Super Admin
-              <span className="block text-[10px] text-[#667a70] font-normal">admin@newgreen.vn</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('admin@banmai.vn');
-                handleLogin('admin@banmai.vn');
-              }}
-              className="p-2 bg-[#f7f8f3] hover:bg-[#eaf5df] border border-[#e3e9df] rounded-xl font-bold text-left transition"
-            >
-              🏫 School Admin
-              <span className="block text-[10px] text-[#667a70] font-normal">admin@banmai.vn</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('kitchen@banmai.vn');
-                handleLogin('kitchen@banmai.vn');
-              }}
-              className="p-2 bg-[#f7f8f3] hover:bg-[#eaf5df] border border-[#e3e9df] rounded-xl font-bold text-left transition"
-            >
-              🍳 Kitchen Bếp ăn
-              <span className="block text-[10px] text-[#667a70] font-normal">kitchen@banmai.vn</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('warehouse@banmai.vn');
-                handleLogin('warehouse@banmai.vn');
-              }}
-              className="p-2 bg-[#f7f8f3] hover:bg-[#eaf5df] border border-[#e3e9df] rounded-xl font-bold text-left transition"
-            >
-              📦 Warehouse Kho
-              <span className="block text-[10px] text-[#667a70] font-normal">warehouse@banmai.vn</span>
-            </button>
-          </div>
-        </div>
 
         <div className="mt-6 text-center">
           <Link href="/" className="text-xs text-[#175b40] font-bold hover:underline">

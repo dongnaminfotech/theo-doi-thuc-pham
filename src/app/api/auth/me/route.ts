@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
       name: user.name,
       role: user.role,
       avatarUrl: user.avatarUrl,
+      hasPassword: !!user.passwordHash,
       schools: user.userSchools.map((us) => us.school),
     },
   });

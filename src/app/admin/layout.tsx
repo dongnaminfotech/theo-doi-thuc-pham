@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { AdminLogoutButton } from '@/components/admin-logout-button';
 
 export default function AdminLayout({
   children,
@@ -106,9 +107,7 @@ export default function AdminLayout({
             <Link href="/" target="_blank" className="hover:text-white flex items-center gap-1">
               <span>Trang phụ huynh</span> ↗
             </Link>
-            <Link href="/admin/login" className="text-red-300 hover:text-red-200">
-              Đăng xuất
-            </Link>
+            <AdminLogoutButton />
           </div>
         </div>
       </aside>

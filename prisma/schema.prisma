@@ -63,6 +63,7 @@ model User {
   id                    String                 @id @default(uuid())
   email                 String                 @unique
   name                  String
+  passwordHash          String?                @map("password_hash")
   avatarUrl             String?                @map("avatar_url")
   role                  Role                   @default(KITCHEN)
   status                UserStatus             @default(ACTIVE)
@@ -251,7 +252,7 @@ model Receipt {
 
   school    School        @relation(fields: [schoolId], references: [id])
   supplier  Supplier      @relation(fields: [supplierId], references: [id])
-  createdBy User?         @relation("ReceiptCreatedBy", fields: [createdById], references: [id])
+  createdBy User?         @relation("ReceiptCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   items     ReceiptItem[]
 
   @@unique([schoolId, receiptNumber])
@@ -319,7 +320,7 @@ model InventoryTransaction {
   school     School     @relation(fields: [schoolId], references: [id])
   lot        Lot        @relation(fields: [lotId], references: [id])
   ingredient Ingredient @relation(fields: [ingredientId], references: [id])
-  actor      User?      @relation("TxActor", fields: [actorId], references: [id])
+  actor      User?      @relation("TxActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@map("inventory_transactions")
 }
@@ -343,8 +344,8 @@ model MealPlan {
   updatedAt       DateTime   @updatedAt @map("updated_at")
 
   school          School           @relation(fields: [schoolId], references: [id])
-  createdBy       User?            @relation("MealCreatedBy", fields: [createdById], references: [id])
-  updatedBy       User?            @relation("MealUpdatedBy", fields: [updatedById], references: [id])
+  createdBy       User?            @relation("MealCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy       User?            @relation("MealUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   mealDishes      MealDish[]
   mealAllocations MealAllocation[]
   traceSnapshots  TraceSnapshot[]
@@ -417,7 +418,7 @@ model TraceSnapshot {
   createdAt     DateTime @default(now()) @map("created_at")
 
   mealPlan    MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
-  publishedBy User?    @relation("SnapshotPublisher", fields: [publishedById], references: [id])
+  publishedBy User?    @relation("SnapshotPublisher", fields: [publishedById], references: [id], onDelete: SetNull)
 
   @@map("trace_snapshots")
 }

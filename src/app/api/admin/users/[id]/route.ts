@@ -44,3 +44,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return jsonError(error.message, 'VALIDATION_ERROR', 400);
   }
 }
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getAuthUser(req);
+  if (!user) return jsonUnauthorized();
+  if (user.role !== 'SUPER_ADMIN') return jsonForbidden('Chỉ SUPER_ADMIN mới có quyền xóa người dùng');
+
+  const { id } = await params;
+  try {
+    const targetUser = await UserService.getUserById(id);
+    if (!targetUser) return jsonNotFound('Người dùng không tồn tại');
+
+    await UserService.deleteUser(id, user.id);
+
+    await logAudit({
+      actor: user,
+      action: 'DELETE_USER',
+      entityType: 'User',
+      entityId: id,
+      beforeData: targetUser,
+    });
+
+    return jsonSuccess({ message: 'Đã xóa người dùng thành công' });
+  } catch (error: any) {
+    return jsonError(error.message, 'OPERATION_FAILED', 400);
+  }
+}

@@ -1,13 +1,15 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { jsonSuccess, jsonError, jsonForbidden } from '@/lib/api-response';
-import { createSessionValue, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { createSessionValue, SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { verifyPassword } from '@/lib/password';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const email = body.email?.toLowerCase().trim();
+    const password = typeof body.password === 'string' ? body.password : '';
 
     if (!email) {
       return jsonError('Vui lòng cung cấp email', 'VALIDATION_ERROR', 400);
@@ -30,6 +32,16 @@ export async function POST(req: NextRequest) {
       return jsonForbidden('Tài khoản của bạn đã bị vô hiệu hóa (DISABLED). Vui lòng liên hệ Quản trị viên.');
     }
 
+    if (!password) {
+      return jsonError('Vui lòng nhập mật khẩu tài khoản', 'PASSWORD_REQUIRED', 400);
+    }
+    if (!user.passwordHash) {
+      return jsonForbidden('Tài khoản chưa được thiết lập mật khẩu. Vui lòng liên hệ Quản trị viên.');
+    }
+    if (!verifyPassword(password, user.passwordHash)) {
+      return jsonForbidden('Email hoặc mật khẩu không chính xác.');
+    }
+
     const sessionVal = createSessionValue(user);
     const res = jsonSuccess({
       user: {
@@ -38,6 +50,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         role: user.role,
         avatarUrl: user.avatarUrl,
+        hasPassword: !!user.passwordHash || !!password,
         schools: user.userSchools.map((us) => us.school),
       },
     });
@@ -50,7 +63,7 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: SESSION_MAX_AGE_SECONDS,
     });
 
     await logAudit({
