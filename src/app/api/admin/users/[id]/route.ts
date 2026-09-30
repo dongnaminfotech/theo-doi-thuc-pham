@@ -28,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const validated = updateUserSchema.parse(body);
 
     const oldUser = await UserService.getUserById(id);
-    const updated = await UserService.updateUser(id, validated);
+    const updated = await UserService.updateUser(id, validated, user.id);
 
     await logAudit({
       actor: user,

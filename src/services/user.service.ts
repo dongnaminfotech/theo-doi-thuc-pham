@@ -95,11 +95,22 @@ export class UserService {
       status?: UserStatus;
       schoolIds?: string[];
       password?: string | null;
-    }
+    },
+    currentUserId?: string
   ) {
     const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing) {
       throw new Error('Người dùng không tồn tại');
+    }
+
+    const removesSuperAdminRole = Boolean(data.role && data.role !== 'SUPER_ADMIN');
+    const disablesUser = data.status === 'DISABLED';
+    if (id === currentUserId && (removesSuperAdminRole || disablesUser)) {
+      throw new Error('Bạn không thể tự hạ quyền hoặc khóa tài khoản của chính mình');
+    }
+    if (existing.role === 'SUPER_ADMIN' && existing.status === 'ACTIVE' && (removesSuperAdminRole || disablesUser)) {
+      const activeSuperAdmins = await prisma.user.count({ where: { role: 'SUPER_ADMIN', status: 'ACTIVE' } });
+      if (activeSuperAdmins <= 1) throw new Error('Hệ thống phải còn ít nhất một SUPER_ADMIN đang hoạt động');
     }
 
     let passwordHash: string | undefined = undefined;
